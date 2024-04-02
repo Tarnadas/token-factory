@@ -1,10 +1,11 @@
-import React from 'react';
-import { useTable } from 'react-table'
-import BTable from 'react-bootstrap/Table';
-import DefaultTokenIcon from './default-token.png';
 import Big from 'big.js';
-import ls from "local-storage";
+import * as ls from 'local-storage';
 import * as nearAPI from 'near-api-js';
+import React from 'react';
+import BTable from 'react-bootstrap/Table';
+import { useTable } from 'react-table';
+
+import DefaultTokenIcon from './default-token.png';
 
 export const ContractName = 'tkn.near';
 const SimplePool = 'SIMPLE_POOL';
@@ -22,7 +23,7 @@ const SortedByLiquidity = 'liquidity';
 const SortedByYourTokens = 'your';
 const SortedByIndex = 'index';
 
-const ot = (pool, token) => (token in pool.tokens) ? pool.tt[1 - pool.tt.indexOf(token)] : null;
+const ot = (pool, token) => (token in pool.tokens ? pool.tt[1 - pool.tt.indexOf(token)] : null);
 
 export const toTokenAccountId = (tokenId) => `${tokenId.toLowerCase()}.${ContractName}`;
 
@@ -30,41 +31,35 @@ function Table({ columns, data }) {
   // Use the state and functions returned from useTable to build your UI
   const { getTableProps, headerGroups, rows, prepareRow } = useTable({
     columns,
-    data,
-  })
+    data
+  });
 
   // Render the UI for your table
   return (
     <BTable striped bordered hover {...getTableProps()}>
       <thead>
-      {headerGroups.map(headerGroup => (
-        <tr {...headerGroup.getHeaderGroupProps()}>
-          {headerGroup.headers.map(column => (
-            <th {...column.getHeaderProps()}>
-              {column.render('Header')}
-            </th>
-          ))}
-        </tr>
-      ))}
+        {headerGroups.map((headerGroup) => (
+          <tr {...headerGroup.getHeaderGroupProps()}>
+            {headerGroup.headers.map((column) => (
+              <th {...column.getHeaderProps()}>{column.render('Header')}</th>
+            ))}
+          </tr>
+        ))}
       </thead>
       <tbody>
-      {rows.map((row, i) => {
-        prepareRow(row)
-        return (
-          <tr {...row.getRowProps()}>
-            {row.cells.map(cell => {
-              return (
-                <td {...cell.getCellProps()}>
-                  {cell.render('Cell')}
-                </td>
-              )
-            })}
-          </tr>
-        )
-      })}
+        {rows.map((row, i) => {
+          prepareRow(row);
+          return (
+            <tr {...row.getRowProps()}>
+              {row.cells.map((cell) => {
+                return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>;
+              })}
+            </tr>
+          );
+        })}
       </tbody>
     </BTable>
-  )
+  );
 }
 
 export class Tokens extends React.Component {
@@ -80,38 +75,58 @@ export class Tokens extends React.Component {
       prices: {},
       liquidity: {},
       bestPool: {},
-      sortedBy: ls.get(this.lsKeySortedBy) || SortedByLiquidity,
+      sortedBy: ls.get(this.lsKeySortedBy) || SortedByLiquidity
     };
     this.columns = [
       {
         Header: 'Icon',
         accessor: 'icon',
-        Cell: ({row}) => <img className="rounded token-icon" src={row.original.metadata.icon || DefaultTokenIcon} alt="Icon"/>
+        Cell: ({ row }) => (
+          <img
+            className="rounded token-icon"
+            src={row.original.metadata.icon || DefaultTokenIcon}
+            alt="Icon"
+          />
+        )
       },
       {
         Header: 'Symbol',
         accessor: 'token_id',
-        Cell: ({row}) => <a href={`${ExplorerBaseUrl}/accounts/${row.original.metadata.symbol.toLowerCase()}.${ContractName}`}>{row.original.metadata.symbol}</a>
+        Cell: ({ row }) => (
+          <a
+            href={`${ExplorerBaseUrl}/accounts/${row.original.metadata.symbol.toLowerCase()}.${ContractName}`}
+          >
+            {row.original.metadata.symbol}
+          </a>
+        )
       },
       {
-        Header: () => <span style={{whiteSpace: 'nowrap'}}>Token Name</span>,
+        Header: () => <span style={{ whiteSpace: 'nowrap' }}>Token Name</span>,
         accessor: 'name',
-        Cell: ({row}) => row.original.metadata.name
+        Cell: ({ row }) => row.original.metadata.name
       },
       {
         Header: 'Owner ID',
         accessor: 'owner_id',
-        Cell: ({row}) => <a href={`${ExplorerBaseUrl}/accounts/${row.original.owner_id}`}>{row.original.owner_id}</a>
+        Cell: ({ row }) => (
+          <a href={`${ExplorerBaseUrl}/accounts/${row.original.owner_id}`}>
+            {row.original.owner_id}
+          </a>
+        )
       },
       {
         Header: 'Total Supply',
         accessor: 'total_supply',
-        Cell: ({row}) => Big(row.original.total_supply).div(Big(10).pow(row.original.metadata.decimals)).round(0, 0).toFixed(0)
+        Cell: ({ row }) =>
+          Big(row.original.total_supply)
+            .div(Big(10).pow(row.original.metadata.decimals))
+            .round(0, 0)
+            .toFixed(0)
       },
       {
         Header: 'Ref Finance',
         accessor: 'REF',
-        Cell: ({row}) => {
+        Cell: ({ row }) => {
           const liq = this.poolLiquidity(row.original.metadata.symbol);
           const bestPool = this.state.bestPool[toTokenAccountId(row.original.metadata.symbol)];
           const price = this.tokenPrice(row.original.metadata.symbol);
@@ -124,43 +139,56 @@ export class Tokens extends React.Component {
                     className="btn btn-outline-success"
                     target="_blank"
                     rel="noopener noreferrer"
-                    href={`https://app.ref.finance/#wrap.near|${toTokenAccountId(row.original.metadata.symbol)}`}>
+                    href={`https://app.ref.finance/#wrap.near|${toTokenAccountId(row.original.metadata.symbol)}`}
+                  >
                     Buy <b>{row.original.metadata.symbol}</b>
                   </a>
                 </div>
               )}
-              {
-                liq.gt(0) ? (
-                  <div>
-                    <span className="text-muted">Liquidity</span> {liq.div(OneNear).toFixed(3)} <b>wNEAR</b>
-                  </div>
-                ) : !!props.accountId && (!!bestPool ? (
+              {liq.gt(0) ? (
+                <div>
+                  <span className="text-muted">Liquidity</span> {liq.div(OneNear).toFixed(3)}{' '}
+                  <b>wNEAR</b>
+                </div>
+              ) : (
+                !!props.accountId &&
+                (bestPool ? (
                   <a
                     className="btn btn-outline-success"
                     target="_blank"
                     rel="noopener noreferrer"
-                    href={`https://app.ref.finance/pool/${bestPool.index}`}>
+                    href={`https://app.ref.finance/pool/${bestPool.index}`}
+                  >
                     Add Liquidity
                   </a>
-                ) : this.renderListingToken(row.original))
-              }
+                ) : (
+                  this.renderListingToken(row.original)
+                ))
+              )}
               {!!price && (
                 <div>
-                  <span className="text-muted">Price</span> {price.div(Big(10).pow(row.original.metadata.decimals)).toFixed(3)} <b>{row.original.metadata.symbol}</b>
+                  <span className="text-muted">Price</span>{' '}
+                  {price.div(Big(10).pow(row.original.metadata.decimals)).toFixed(3)}{' '}
+                  <b>{row.original.metadata.symbol}</b>
                 </div>
               )}
             </div>
-          )
+          );
         }
       },
       {
         Header: 'Wallet',
         accessor: 'wallet',
-        Cell: ({row}) => props.accountId && <button
-          className="btn btn-outline-secondary"
-          onClick={() => this.registerToken(row.original.metadata.symbol)}>Add to Wallet</button>
-      },
-
+        Cell: ({ row }) =>
+          props.accountId && (
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => this.registerToken(row.original.metadata.symbol)}
+            >
+              Add to Wallet
+            </button>
+          )
+      }
     ];
     this._initialized = false;
   }
@@ -168,54 +196,79 @@ export class Tokens extends React.Component {
   async refRegisterToken(tokenId) {
     const tokenAccountId = toTokenAccountId(tokenId);
     await this._refContract.account.signAndSendTransaction(RefContractId, [
-      nearAPI.transactions.functionCall("storage_deposit", {
-        account_id: this._accountId,
-        registration_only: false,
-      }, TGas.mul(5).toFixed(0), RefStorageDeposit.toFixed(0)),
-      nearAPI.transactions.functionCall("register_tokens", {
-        token_ids: [tokenAccountId],
-      }, TGas.mul(5).toFixed(0), 0),
+      nearAPI.transactions.functionCall(
+        'storage_deposit',
+        {
+          account_id: this._accountId,
+          registration_only: false
+        },
+        TGas.mul(5).toFixed(0),
+        RefStorageDeposit.toFixed(0)
+      ),
+      nearAPI.transactions.functionCall(
+        'register_tokens',
+        {
+          token_ids: [tokenAccountId]
+        },
+        TGas.mul(5).toFixed(0),
+        0
+      )
     ]);
   }
 
   async registerToken(tokenId) {
     const tokenContractId = toTokenAccountId(tokenId);
     const tokenContract = new nearAPI.Contract(this._account, tokenContractId, {
-      changeMethods: ['storage_deposit'],
+      changeMethods: ['storage_deposit']
     });
-    await tokenContract.storage_deposit({
-      registration_only: true,
-    }, BoatOfGas.toFixed(0), StorageDeposit.toFixed(0));
+    await tokenContract.storage_deposit(
+      {
+        registration_only: true
+      },
+      BoatOfGas.toFixed(0),
+      StorageDeposit.toFixed(0)
+    );
   }
 
   async refDepositToken(tokenAccountId) {
     const tokenContract = new nearAPI.Contract(this._account, tokenAccountId, {
       viewMethods: ['ft_balance_of']
     });
-    let amount = await tokenContract.ft_balance_of({
-      account_id: this._accountId,
-    })
+    const amount = await tokenContract.ft_balance_of({
+      account_id: this._accountId
+    });
     await this._account.signAndSendTransaction(tokenAccountId, [
-      nearAPI.transactions.functionCall("storage_deposit", {
-        account_id: RefContractId,
-        registration_only: true,
-      }, TGas.mul(5).toFixed(0), StorageDeposit.toFixed(0)),
-      nearAPI.transactions.functionCall("ft_transfer_call", {
-        receiver_id: RefContractId,
-        amount,
-        msg: "",
-      }, TGas.mul(100).toFixed(0), "1"),
-    ])
+      nearAPI.transactions.functionCall(
+        'storage_deposit',
+        {
+          account_id: RefContractId,
+          registration_only: true
+        },
+        TGas.mul(5).toFixed(0),
+        StorageDeposit.toFixed(0)
+      ),
+      nearAPI.transactions.functionCall(
+        'ft_transfer_call',
+        {
+          receiver_id: RefContractId,
+          amount,
+          msg: ''
+        },
+        TGas.mul(100).toFixed(0),
+        '1'
+      )
+    ]);
   }
 
   async addSimplePool(tokenAccountId) {
-    await this._refContract.add_simple_pool({
-      tokens: [
-        wNEAR,
-        tokenAccountId
-      ],
-      fee: 25,
-    }, TGas.mul(30).toFixed(0), PoolStorageDeposit.toFixed(0),)
+    await this._refContract.add_simple_pool(
+      {
+        tokens: [wNEAR, tokenAccountId],
+        fee: 25
+      },
+      TGas.mul(30).toFixed(0),
+      PoolStorageDeposit.toFixed(0)
+    );
   }
 
   renderListingToken(token) {
@@ -228,23 +281,28 @@ export class Tokens extends React.Component {
       return (
         <button
           className="btn btn-outline-secondary"
-          onClick={() => this.refRegisterToken(tokenId)}>Register <b>{tokenId}</b></button>
-      )
+          onClick={() => this.refRegisterToken(tokenId)}
+        >
+          Register <b>{tokenId}</b>
+        </button>
+      );
     }
     if (this.balances[tokenAccountId].eq(0)) {
       return (
         <button
           className="btn btn-outline-success"
-          onClick={() => this.refDepositToken(tokenAccountId)}>
+          onClick={() => this.refDepositToken(tokenAccountId)}
+        >
           Deposit <b>{tokenId}</b>
         </button>
-      )
+      );
     }
 
     return (
       <button
         className="btn btn-outline-success"
-        onClick={() => this.addSimplePool(tokenAccountId)}>
+        onClick={() => this.addSimplePool(tokenAccountId)}
+      >
         Create <b>{tokenId}</b> pool
       </button>
     );
@@ -259,8 +317,27 @@ export class Tokens extends React.Component {
     this._account = this.props.contract.account;
     this._accountId = this._account.accountId;
     this._refContract = new nearAPI.Contract(this._account, RefContractId, {
-      viewMethods: ['get_number_of_pools', 'get_whitelisted_tokens', 'storage_balance_of', 'get_deposits', 'get_pool', 'get_pools', 'get_pool_volumes', 'get_pool_shares', 'get_return', 'get_owner'],
-      changeMethods: ['add_simple_pool', 'storage_deposit', 'register_tokens', 'add_liquidity', 'remove_liquidity', 'swap', 'withdraw'],
+      viewMethods: [
+        'get_number_of_pools',
+        'get_whitelisted_tokens',
+        'storage_balance_of',
+        'get_deposits',
+        'get_pool',
+        'get_pools',
+        'get_pool_volumes',
+        'get_pool_shares',
+        'get_return',
+        'get_owner'
+      ],
+      changeMethods: [
+        'add_simple_pool',
+        'storage_deposit',
+        'register_tokens',
+        'add_liquidity',
+        'remove_liquidity',
+        'swap',
+        'withdraw'
+      ]
     });
 
     this.refetchTokens();
@@ -276,7 +353,7 @@ export class Tokens extends React.Component {
   }
 
   poolLiquidity(tokenId) {
-    return this.state.liquidity[toTokenAccountId(tokenId)] || Big(0)
+    return this.state.liquidity[toTokenAccountId(tokenId)] || Big(0);
   }
 
   sortTokens(tokens) {
@@ -284,14 +361,14 @@ export class Tokens extends React.Component {
       tokens.sort((a, b) => {
         const liqA = this.poolLiquidity(a.metadata.symbol);
         const liqB = this.poolLiquidity(b.metadata.symbol);
-        return liqB.sub(liqA).toNumber()
-      })
+        return liqB.sub(liqA).toNumber();
+      });
     } else if (this.state.sortedBy === SortedByYourTokens) {
       tokens.sort((a, b) => {
-        const va = (a.owner_id === this._accountId) ? 1 : 0;
-        const vb = (b.owner_id === this._accountId) ? 1 : 0;
+        const va = a.owner_id === this._accountId ? 1 : 0;
+        const vb = b.owner_id === this._accountId ? 1 : 0;
         return vb - va;
-      })
+      });
     }
     return tokens;
   }
@@ -302,7 +379,7 @@ export class Tokens extends React.Component {
     const tokens = this.tokens;
     const limit = 5;
     for (let i = tokens.length; i < numTokens; i += limit) {
-      const newTokens = await contract.get_tokens({from_index: i, limit});
+      const newTokens = await contract.get_tokens({ from_index: i, limit });
       tokens.push(...newTokens);
       ls.set(this.props.lsKeyCachedTokens, tokens);
       this.updateTokens();
@@ -311,14 +388,14 @@ export class Tokens extends React.Component {
 
   updateTokens() {
     this.setState({
-      tokens: this.sortTokens([...(ls.get(this.props.lsKeyCachedTokens) || [])]),
-    })
+      tokens: this.sortTokens([...(ls.get(this.props.lsKeyCachedTokens) || [])])
+    });
     ls.set(this.lsKeySortedBy, this.state.sortedBy);
   }
 
   async refreshRefBalances() {
     if (this._accountId) {
-      const balances = await this._refContract.get_deposits({account_id: this._accountId});
+      const balances = await this._refContract.get_deposits({ account_id: this._accountId });
       Object.keys(balances).forEach((key) => {
         balances[key] = Big(balances[key]);
       });
@@ -331,20 +408,24 @@ export class Tokens extends React.Component {
   async refreshRef() {
     await Promise.all([this.refreshRefPools(), this.refreshRefBalances()]);
 
-    this.setState({
-      prices: this.ref.prices,
-      liquidity: this.ref.liquidity,
-      bestPool: this.ref.bestPool,
-      balances: this.balances,
-    }, () => this.updateTokens())
+    this.setState(
+      {
+        prices: this.ref.prices,
+        liquidity: this.ref.liquidity,
+        bestPool: this.ref.bestPool,
+        balances: this.balances
+      },
+      () => this.updateTokens()
+    );
   }
 
   async refreshRefPools() {
-    const numPools = await this._refContract.get_number_of_pools();
+    // const numPools = await this._refContract.get_number_of_pools();
+    const numPools = 4000;
     const promises = [];
-    const limit = 100;
+    const limit = 1_000;
     for (let i = 0; i < numPools; i += limit) {
-      promises.push(this._refContract.get_pools({from_index: i, limit}));
+      promises.push(this._refContract.get_pools({ from_index: i, limit }));
     }
     const rawPools = (await Promise.all(promises)).flat();
     const pools = {};
@@ -359,25 +440,22 @@ export class Tokens extends React.Component {
             return acc;
           }, {}),
           fee: pool.total_fee,
-          shares: Big(pool.shares_total_supply),
+          shares: Big(pool.shares_total_supply)
         };
         pools[p.index] = p;
       }
     });
     this.ref = {
-      pools,
+      pools
     };
 
-    const liquidity = {
-    };
+    const liquidity = {};
 
     const prices = {
-      [wNEAR]: OneNear,
-    }
-
-    const bestPool = {
-
+      [wNEAR]: OneNear
     };
+
+    const bestPool = {};
 
     Object.values(pools).forEach((pool) => {
       if (wNEAR in pool.tokens) {
@@ -387,7 +465,7 @@ export class Tokens extends React.Component {
         if (!(pool.otherToken in bestPool) || bestPool[pool.otherToken].liquidity.lt(wNearAmount)) {
           bestPool[pool.otherToken] = {
             liquidity: wNearAmount,
-            index: pool.index,
+            index: pool.index
           };
         }
         if (wNearAmount.lt(OneNear)) {
@@ -403,9 +481,8 @@ export class Tokens extends React.Component {
     this.ref.prices = prices;
     this.ref.liquidity = liquidity;
     this.ref.bestPool = bestPool;
-
+    console.log('liquidity', liquidity);
   }
-
 
   componentDidMount() {
     if (this.props.contract) {
@@ -430,18 +507,28 @@ export class Tokens extends React.Component {
             <button
               type="button"
               className={`btn ${this.state.sortedBy === SortedByLiquidity ? 'btn-secondary' : 'btn-outline-secondary'}`}
-              onClick={() => this.setState({sortedBy: SortedByLiquidity}, () => this.updateTokens())}
-            >Liquidity</button>
+              onClick={() =>
+                this.setState({ sortedBy: SortedByLiquidity }, () => this.updateTokens())
+              }
+            >
+              Liquidity
+            </button>
             <button
               type="button"
               className={`btn ${this.state.sortedBy === SortedByYourTokens ? 'btn-secondary' : 'btn-outline-secondary'}`}
-              onClick={() => this.setState({sortedBy: SortedByYourTokens}, () => this.updateTokens())}
-            >Your tokens</button>
+              onClick={() =>
+                this.setState({ sortedBy: SortedByYourTokens }, () => this.updateTokens())
+              }
+            >
+              Your tokens
+            </button>
             <button
               type="button"
               className={`btn ${this.state.sortedBy === SortedByIndex ? 'btn-secondary' : 'btn-outline-secondary'}`}
-              onClick={() => this.setState({sortedBy: SortedByIndex}, () => this.updateTokens())}
-            >Index</button>
+              onClick={() => this.setState({ sortedBy: SortedByIndex }, () => this.updateTokens())}
+            >
+              Index
+            </button>
           </div>
         </div>
         <div className="tokens-table">

@@ -1,10 +1,11 @@
-import "./App.css";
-import React from 'react';
-import * as nearAPI from 'near-api-js';
-import Files from "react-files";
-import { BoatOfGas, OneNear, Tokens, ContractName } from './Tokens.js';
+import './App.css';
 import Big from 'big.js';
-import ls from "local-storage";
+import ls from 'local-storage';
+import * as nearAPI from 'near-api-js';
+import React from 'react';
+import Files from 'react-files';
+
+import { BoatOfGas, OneNear, Tokens, ContractName } from './Tokens.js';
 
 const UploadResizeWidth = 96;
 const UploadResizeHeight = 96;
@@ -13,7 +14,7 @@ const MaxU128 = Big(2).pow(128).sub(1);
 const MinAccountIdLen = 2;
 const MaxAccountIdLen = 64;
 const ValidAccountRe = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
-const ValidTokenIdRe = /^[a-z\d]+$/
+const ValidTokenIdRe = /^[a-z\d]+$/;
 
 const fromYocto = (a) => a && Big(a).div(OneNear).toFixed(6);
 
@@ -22,9 +23,9 @@ class App extends React.Component {
     super(props);
 
     this.lsKey = ContractName + ':v02:';
-    this.lsKeyToken = this.lsKey + "token";
-    this.lsKeyCachedTokens = this.lsKey + "cachedTokens";
-    this.lsKeyCreateToken = this.lsKey + "createToken";
+    this.lsKeyToken = this.lsKey + 'token';
+    this.lsKeyCachedTokens = this.lsKey + 'cachedTokens';
+    this.lsKeyCreateToken = this.lsKey + 'createToken';
     this._updateRequiredDeposit = null;
 
     this.state = {
@@ -40,12 +41,12 @@ class App extends React.Component {
       accountLoading: false,
       accountExists: true,
 
-      tokenId: "",
-      totalSupply: Big("1000000000"),
+      tokenId: '',
+      totalSupply: Big('1000000000'),
       tokenDecimals: 18,
-      tokenName: "",
+      tokenName: '',
       tokenIconBase64: null,
-      requiredDeposit: null,
+      requiredDeposit: null
     };
 
     this._initNear().then(() => {
@@ -53,9 +54,9 @@ class App extends React.Component {
         connected: true,
         signedIn: !!this._accountId,
         accountId: this._accountId,
-        ownerId: this._ownerId,
-      })
-    })
+        ownerId: this._ownerId
+      });
+    });
   }
 
   async _initYourToken() {
@@ -65,11 +66,11 @@ class App extends React.Component {
       if (createToken) {
         ls.remove(this.lsKeyCreateToken);
         this.setState({
-          creating: true,
+          creating: true
         });
         const requiredDeposit = await this.computeRequiredDeposit(args);
         if (requiredDeposit.eq(0)) {
-          await this._contract.create_token({args}, BoatOfGas.toFixed(0));
+          await this._contract.create_token({ args }, BoatOfGas.toFixed(0));
         } else {
           this._ownerId = args.owner_id;
           this.setState({
@@ -77,8 +78,8 @@ class App extends React.Component {
             totalSupply: Big(args.total_supply).div(Big(10).pow(args.metadata.decimals)),
             tokenDecimals: args.metadata.decimals,
             tokenName: args.metadata.name,
-            tokenIconBase64: args.metadata.icon,
-          })
+            tokenIconBase64: args.metadata.icon
+          });
           // Transaction was canceled.
         }
         ls.remove(this.lsKeyToken);
@@ -89,7 +90,7 @@ class App extends React.Component {
           totalSupply: Big(args.total_supply).div(Big(10).pow(args.metadata.decimals)),
           tokenDecimals: args.metadata.decimals,
           tokenName: args.metadata.name,
-          tokenIconBase64: args.metadata.icon,
+          tokenIconBase64: args.metadata.icon
         });
       }
     }
@@ -100,15 +101,18 @@ class App extends React.Component {
   constructArgs() {
     return {
       owner_id: this._accountId,
-      total_supply: this.state.totalSupply.mul(Big(10).pow(this.state.tokenDecimals)).round(0, 0).toFixed(0),
+      total_supply: this.state.totalSupply
+        .mul(Big(10).pow(this.state.tokenDecimals))
+        .round(0, 0)
+        .toFixed(0),
       metadata: {
-        spec: "ft-1.0.0",
+        spec: 'ft-1.0.0',
         name: this.state.tokenName,
         symbol: this.state.tokenId,
         icon: this.state.tokenIconBase64,
-        decimals: this.state.tokenDecimals,
+        decimals: this.state.tokenDecimals
       }
-    }
+    };
   }
 
   async internalUpdateRequiredDeposit() {
@@ -117,7 +121,7 @@ class App extends React.Component {
       if (!requiredDeposit || requiredDeposit !== this.state.requiredDeposit) {
         this.setState({
           requiredDeposit
-        })
+        });
       }
     }
   }
@@ -132,9 +136,12 @@ class App extends React.Component {
 
   async computeRequiredDeposit(args) {
     args = args || this.constructArgs();
-    return Big(await this._contract.get_required_deposit({
-      args, account_id: this._accountId
-    }))
+    return Big(
+      await this._contract.get_required_deposit({
+        args,
+        account_id: this._accountId
+      })
+    );
   }
 
   async _initNear() {
@@ -142,7 +149,7 @@ class App extends React.Component {
       networkId: 'mainnet',
       nodeUrl: 'https://rpc.mainnet.near.org',
       contractName: ContractName,
-      walletUrl: 'https://wallet.near.org',
+      walletUrl: 'https://app.mynearwallet.com'
     };
     const keyStore = new nearAPI.keyStores.BrowserLocalStorageKeyStore();
     const near = await nearAPI.connect(Object.assign({ deps: { keyStore } }, nearConfig));
@@ -157,15 +164,14 @@ class App extends React.Component {
     this._account = this._walletConnection.account();
     this._contract = new nearAPI.Contract(this._account, ContractName, {
       viewMethods: ['get_required_deposit', 'get_number_of_tokens', 'get_tokens', 'get_token'],
-      changeMethods: ['create_token', 'storage_deposit'],
+      changeMethods: ['create_token', 'storage_deposit']
     });
     await this._initYourToken();
-
   }
 
   handleChange(key, value) {
     const stateChange = {
-      [key]: value,
+      [key]: value
     };
     if (key === 'tokenDecimals') {
       value = parseInt(value);
@@ -176,7 +182,7 @@ class App extends React.Component {
       const dec = Big(10).pow(this.state.tokenDecimals);
       const intTotalSupply = value.mul(dec).round(0, 0);
       if (intTotalSupply.lt(1)) {
-        value = Big(1)
+        value = Big(1);
       } else if (intTotalSupply.gt(MaxU128)) {
         value = MaxU128.div(dec).round(0, 0);
       }
@@ -188,20 +194,23 @@ class App extends React.Component {
       const tokenId = value.toLowerCase();
       if (this.isValidTokenId(value)) {
         stateChange.tokenLoading = true;
-        this._contract.get_token({token_id: tokenId}).then((tokenDescription) => {
-          if (this.state.tokenId === value) {
-            this.setState({
-              tokenLoading: false,
-              tokenAlreadyExists: tokenDescription !== null,
-            })
-          }
-        }).catch((e) => {
-          if (this.state.tokenId === value) {
-            this.setState({
-              tokenLoading: false,
-            })
-          }
-        })
+        this._contract
+          .get_token({ token_id: tokenId })
+          .then((tokenDescription) => {
+            if (this.state.tokenId === value) {
+              this.setState({
+                tokenLoading: false,
+                tokenAlreadyExists: tokenDescription !== null
+              });
+            }
+          })
+          .catch((e) => {
+            if (this.state.tokenId === value) {
+              this.setState({
+                tokenLoading: false
+              });
+            }
+          });
       }
     } else if (key === 'ownerId') {
       value = value.replace(/[^a-z\-_\d]/, '');
@@ -209,29 +218,34 @@ class App extends React.Component {
       stateChange.accountExists = true;
       if (this.isValidTokenId(value)) {
         stateChange.accountLoading = true;
-        this._near.connection.provider.query(`account/${value}`, '').then((_a) => {
-          if (this.state.ownerId === value) {
-            this.setState({
-              accountLoading: false,
-            })
-          }
-        }).catch((e) => {
-          if (this.state.ownerId === value) {
-            this.setState({
-              accountLoading: false,
-              accountExists: false,
-            })
-          }
-        })
+        this._near.connection.provider
+          .query(`account/${value}`, '')
+          .then((_a) => {
+            if (this.state.ownerId === value) {
+              this.setState({
+                accountLoading: false
+              });
+            }
+          })
+          .catch((e) => {
+            if (this.state.ownerId === value) {
+              this.setState({
+                accountLoading: false,
+                accountExists: false
+              });
+            }
+          });
       }
     }
     this.setState(stateChange, () => this.updateRequiredDeposit());
   }
 
   isValidAccountId(accountId) {
-    return accountId.length >= MinAccountIdLen &&
+    return (
+      accountId.length >= MinAccountIdLen &&
       accountId.length <= MaxAccountIdLen &&
-      accountId.match(ValidAccountRe);
+      accountId.match(ValidAccountRe)
+    );
   }
 
   isValidTokenId(tokenId) {
@@ -240,31 +254,34 @@ class App extends React.Component {
   }
 
   tokenIdClass() {
-    if (!this.state.tokenId || (this.isValidTokenId(this.state.tokenId) && this.state.tokenLoading)) {
-      return "form-control form-control-large";
+    if (
+      !this.state.tokenId ||
+      (this.isValidTokenId(this.state.tokenId) && this.state.tokenLoading)
+    ) {
+      return 'form-control form-control-large';
     } else if (this.isValidTokenId(this.state.tokenId) && !this.state.tokenAlreadyExists) {
-      return "form-control form-control-large is-valid";
+      return 'form-control form-control-large is-valid';
     } else {
-      return "form-control form-control-large is-invalid";
+      return 'form-control form-control-large is-invalid';
     }
   }
 
   ownerIdClass() {
-    if (!this.state.ownerId || (this.isValidAccountId(this.state.ownerId) && this.state.accountLoading)) {
-      return "form-control form-control-large";
+    if (
+      !this.state.ownerId ||
+      (this.isValidAccountId(this.state.ownerId) && this.state.accountLoading)
+    ) {
+      return 'form-control form-control-large';
     } else if (this.isValidAccountId(this.state.ownerId) && this.state.accountExists) {
-      return "form-control form-control-large is-valid";
+      return 'form-control form-control-large is-valid';
     } else {
-      return "form-control form-control-large is-invalid";
+      return 'form-control form-control-large is-invalid';
     }
   }
 
   async requestSignIn() {
     const appTitle = 'Token Factory';
-    await this._walletConnection.requestSignIn(
-        ContractName,
-        appTitle
-    )
+    await this._walletConnection.requestSignIn(ContractName, appTitle);
   }
 
   async logOut() {
@@ -272,31 +289,37 @@ class App extends React.Component {
     this._accountId = null;
     this.setState({
       signedIn: !!this._accountId,
-      accountId: this._accountId,
-    })
+      accountId: this._accountId
+    });
   }
 
   async onFilesChange(f) {
-    let sourceImage = new Image();
-    let reader = new FileReader();
+    const sourceImage = new Image();
+    const reader = new FileReader();
 
     reader.readAsDataURL(f[0]);
 
     sourceImage.onload = () => {
       // Create a canvas with the desired dimensions
-      let canvas = document.createElement("canvas");
+      const canvas = document.createElement('canvas');
       const aspect = sourceImage.naturalWidth / sourceImage.naturalHeight;
       const width = Math.round(UploadResizeWidth * Math.max(1, aspect));
       const height = Math.round(UploadResizeHeight * Math.max(1, 1 / aspect));
       canvas.width = UploadResizeWidth;
       canvas.height = UploadResizeHeight;
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext('2d');
 
       // Scale and draw the source image to the canvas
-      ctx.imageSmoothingQuality = "high";
-      ctx.fillStyle = "#fff";
+      ctx.imageSmoothingQuality = 'high';
+      ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, UploadResizeWidth, UploadResizeHeight);
-      ctx.drawImage(sourceImage, (UploadResizeWidth - width) / 2, (UploadResizeHeight - height) / 2, width, height);
+      ctx.drawImage(
+        sourceImage,
+        (UploadResizeWidth - width) / 2,
+        (UploadResizeHeight - height) / 2,
+        width,
+        height
+      );
 
       // Convert the canvas to a data URL in PNG format
       const options = [
@@ -308,9 +331,9 @@ class App extends React.Component {
       options.sort((a, b) => a.length - b.length);
 
       this.handleChange('tokenIconBase64', options[0]);
-    }
+    };
 
-    reader.onload = function(event) {
+    reader.onload = function (event) {
       sourceImage.src = event.target.result;
     };
   }
@@ -321,7 +344,7 @@ class App extends React.Component {
 
   async createToken() {
     this.setState({
-      creating: true,
+      creating: true
     });
     const args = this.constructArgs();
     const requiredDeposit = await this.computeRequiredDeposit(args);
@@ -331,47 +354,61 @@ class App extends React.Component {
   }
 
   render() {
-    const content = !this.state.connected && this.state.creating ? (
-      <div>
-        <div>Creating your token... <span className="spinner-grow spinner-grow-lg" role="status" aria-hidden="true"></span></div>
-      </div>
-    ) : !this.state.connected ? (
-        <div>Connecting... <span className="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span></div>
-    ) : this.state.readyForWalletWhitelist ? (
-      <div>
-        <div className="alert alert-success" role="alert">
-          The token <b>{this.state.tokenId}</b> was successfully created!
-        </div>
+    const content =
+      !this.state.connected && this.state.creating ? (
         <div>
-          <button
-            className="btn btn-success"
-            onClick={() => this.requestWhitelist(this.state.tokenId)}>Add <b>{this.state.tokenId}</b> to your NEAR Wallet</button>
+          <div>
+            Creating your token...{' '}
+            <span className="spinner-grow spinner-grow-lg" role="status" aria-hidden="true"></span>
+          </div>
         </div>
-      </div>
-    ) : (this.state.signedIn ? (
+      ) : !this.state.connected ? (
+        <div>
+          Connecting...{' '}
+          <span className="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+        </div>
+      ) : this.state.readyForWalletWhitelist ? (
+        <div>
+          <div className="alert alert-success" role="alert">
+            The token <b>{this.state.tokenId}</b> was successfully created!
+          </div>
+          <div>
+            <button
+              className="btn btn-success"
+              onClick={() => this.requestWhitelist(this.state.tokenId)}
+            >
+              Add <b>{this.state.tokenId}</b> to your NEAR Wallet
+            </button>
+          </div>
+        </div>
+      ) : this.state.signedIn ? (
         <div>
           <div className="float-right">
-            <button
-                className="btn btn-outline-secondary"
-                onClick={() => this.logOut()}>Log out</button>
+            <button className="btn btn-outline-secondary" onClick={() => this.logOut()}>
+              Log out
+            </button>
           </div>
-          <h4>Hello, <span className="font-weight-bold">{this.state.accountId}</span>!</h4>
+          <h4>
+            Hello, <span className="font-weight-bold">{this.state.accountId}</span>!
+          </h4>
           {this.state.expandCreateToken ? (
             <div>
               <p>
-                Issue a new token. It'll cost you <span className="font-weight-bold">{fromYocto(this.state.requiredDeposit)} Ⓝ</span>
+                Issue a new token. It'll cost you{' '}
+                <span className="font-weight-bold">{fromYocto(this.state.requiredDeposit)} Ⓝ</span>
               </p>
 
               <div className="form-group">
                 <label forhtml="tokenName">Token Name</label>
                 <div className="input-group">
-                  <input type="text"
-                         className="form-control form-control-large"
-                         id="tokenName"
-                         placeholder="Epic Moon Rocket"
-                         disabled={this.state.creating}
-                         value={this.state.tokenName}
-                         onChange={(e) => this.handleChange('tokenName', e.target.value)}
+                  <input
+                    type="text"
+                    className="form-control form-control-large"
+                    id="tokenName"
+                    placeholder="Epic Moon Rocket"
+                    disabled={this.state.creating}
+                    value={this.state.tokenName}
+                    onChange={(e) => this.handleChange('tokenName', e.target.value)}
                   />
                 </div>
                 <small>The token name may be used to display the token in the UI</small>
@@ -380,33 +417,44 @@ class App extends React.Component {
               <div className="form-group">
                 <label forhtml="tokenId">Token Symbol</label>
                 <div className="input-group">
-                  <input type="text"
-                         className={this.tokenIdClass()}
-                         id="tokenId"
-                         placeholder="MOON"
-                         disabled={this.state.creating}
-                         value={this.state.tokenId}
-                         onChange={(e) => this.handleChange('tokenId', e.target.value)}
+                  <input
+                    type="text"
+                    className={this.tokenIdClass()}
+                    id="tokenId"
+                    placeholder="MOON"
+                    disabled={this.state.creating}
+                    value={this.state.tokenId}
+                    onChange={(e) => this.handleChange('tokenId', e.target.value)}
                   />
                 </div>
                 {this.state.tokenAlreadyExists && (
                   <div>
-                    <small><b>Token Symbol already exists.</b></small>
+                    <small>
+                      <b>Token Symbol already exists.</b>
+                    </small>
                   </div>
                 )}
-                <small>It'll be used to identify the token and to create an Account ID for the token <code>{this.state.tokenId ? (this.state.tokenId.toLowerCase() + '.' + ContractName) : ""}</code></small>
+                <small>
+                  It'll be used to identify the token and to create an Account ID for the token{' '}
+                  <code>
+                    {this.state.tokenId
+                      ? this.state.tokenId.toLowerCase() + '.' + ContractName
+                      : ''}
+                  </code>
+                </small>
               </div>
 
               <div className="form-group">
                 <label forhtml="totalSupply">Total Supply</label>
                 <div className="input-group">
-                  <input type="number"
-                      className="form-control form-control-large"
-                      id="totalSupply"
-                      placeholder="1000000000"
-                      disabled={this.state.creating}
-                      value={this.state.totalSupply}
-                      onChange={(e) => this.handleChange('totalSupply', e.target.value)}
+                  <input
+                    type="number"
+                    className="form-control form-control-large"
+                    id="totalSupply"
+                    placeholder="1000000000"
+                    disabled={this.state.creating}
+                    value={this.state.totalSupply}
+                    onChange={(e) => this.handleChange('totalSupply', e.target.value)}
                   />
                 </div>
                 <small>This is a total number of tokens to mint.</small>
@@ -415,16 +463,20 @@ class App extends React.Component {
               <div className="form-group">
                 <label forhtml="tokenDecimals">Token Decimals</label>
                 <div className="input-group">
-                  <input type="number"
-                         className="form-control form-control-large"
-                         id="tokenDecimals"
-                         placeholder="18"
-                         disabled={this.state.creating}
-                         value={this.state.tokenDecimals}
-                         onChange={(e) => this.handleChange('tokenDecimals', e.target.value)}
+                  <input
+                    type="number"
+                    className="form-control form-control-large"
+                    id="tokenDecimals"
+                    placeholder="18"
+                    disabled={this.state.creating}
+                    value={this.state.tokenDecimals}
+                    onChange={(e) => this.handleChange('tokenDecimals', e.target.value)}
                   />
                 </div>
-                <small>Tokens operate on integer numbers. <code>1 / 10**{this.state.tokenDecimals}</code> is the smallest fractional value of the new token.</small>
+                <small>
+                  Tokens operate on integer numbers. <code>1 / 10**{this.state.tokenDecimals}</code>{' '}
+                  is the smallest fractional value of the new token.
+                </small>
               </div>
 
               <div className="form-group">
@@ -432,19 +484,24 @@ class App extends React.Component {
                 <div className="input-group">
                   <div>
                     {this.state.tokenIconBase64 && (
-                      <img className="rounded token-icon" style={{marginRight: '1em'}} src={this.state.tokenIconBase64} alt="Token Icon"/>
+                      <img
+                        className="rounded token-icon"
+                        style={{ marginRight: '1em' }}
+                        src={this.state.tokenIconBase64}
+                        alt="Token Icon"
+                      />
                     )}
                   </div>
                   <div>
                     <Files
-                        id="tokenIcon"
-                        className='form-control form-control-large btn btn-outline-primary'
-                        onChange={(f) => this.onFilesChange(f)}
-                        onError={(e, f) => this.onFilesError(e, f)}
-                        multiple={false}
-                        accepts={['image/*']}
-                        minFileSize={1}
-                        clickable
+                      id="tokenIcon"
+                      className="form-control form-control-large btn btn-outline-primary"
+                      onChange={(f) => this.onFilesChange(f)}
+                      onError={(e, f) => this.onFilesError(e, f)}
+                      multiple={false}
+                      accepts={['image/*']}
+                      minFileSize={1}
+                      clickable
                     >
                       Click to upload Token Icon
                     </Files>
@@ -455,18 +512,21 @@ class App extends React.Component {
               <div className="form-group">
                 <label forhtml="ownerId">Owner Account ID</label>
                 <div className="input-group">
-                  <input type="text"
-                         className={this.ownerIdClass()}
-                         id="ownerId"
-                         placeholder={this.state.accountId}
-                         disabled={this.state.creating}
-                         value={this.state.ownerId}
-                         onChange={(e) => this.handleChange('ownerId', e.target.value)}
+                  <input
+                    type="text"
+                    className={this.ownerIdClass()}
+                    id="ownerId"
+                    placeholder={this.state.accountId}
+                    disabled={this.state.creating}
+                    value={this.state.ownerId}
+                    onChange={(e) => this.handleChange('ownerId', e.target.value)}
                   />
                 </div>
                 {!this.state.accountExists && (
                   <div>
-                    <small><b>Account doesn't exists.</b></small>
+                    <small>
+                      <b>Account doesn't exists.</b>
+                    </small>
                   </div>
                 )}
                 <small>This account will own the total supply of the newly created token</small>
@@ -475,9 +535,17 @@ class App extends React.Component {
               <div className="form-group">
                 <div>
                   <button
-                      className="btn btn-success"
-                      disabled={this.state.creating || !this.isValidTokenId(this.state.tokenId) || this.state.tokenLoading || this.state.tokenAlreadyExists}
-                      onClick={() => this.createToken()}>Create Token ({fromYocto(this.state.requiredDeposit)} Ⓝ)</button>
+                    className="btn btn-success"
+                    disabled={
+                      this.state.creating ||
+                      !this.isValidTokenId(this.state.tokenId) ||
+                      this.state.tokenLoading ||
+                      this.state.tokenAlreadyExists
+                    }
+                    onClick={() => this.createToken()}
+                  >
+                    Create Token ({fromYocto(this.state.requiredDeposit)} Ⓝ)
+                  </button>
                 </div>
               </div>
             </div>
@@ -485,44 +553,40 @@ class App extends React.Component {
             <div>
               <button
                 className="btn btn-primary"
-                onClick={() => this.setState({expandCreateToken: true})}
+                onClick={() => this.setState({ expandCreateToken: true })}
               >
                 Expand token creation form
               </button>
             </div>
           )}
-          <hr/>
+          <hr />
         </div>
-    ) : (
+      ) : (
         <div>
-          <button
-              className="btn btn-primary"
-              onClick={() => this.requestSignIn()}>Log in with NEAR Wallet to create a new Token</button>
+          <button className="btn btn-primary" onClick={() => this.requestSignIn()}>
+            Log in with NEAR Wallet to create a new Token
+          </button>
         </div>
-    ));
+      );
     const tokens = this.state.connected && (
-        <div>
-          <h3>Tokens</h3>
-          <Tokens contract={this._contract}
-                  lsKey={this.lsKey}
-                  lsKeyCachedTokens={this.lsKeyCachedTokens}
-                  accountId={this.state.accountId}
-          />
-        </div>
+      <div>
+        <h3>Tokens</h3>
+        <Tokens
+          contract={this._contract}
+          lsKey={this.lsKey}
+          lsKeyCachedTokens={this.lsKeyCachedTokens}
+          accountId={this.state.accountId}
+        />
+      </div>
     );
     return (
-        <div>
-          <h1>Token Farm</h1>
-          <div style={{minHeight: "5em"}}>
-            {content}
-          </div>
-          <div>
-            {tokens}
-          </div>
-        </div>
+      <div>
+        <h1>Token Farm</h1>
+        <div style={{ minHeight: '5em' }}>{content}</div>
+        <div>{tokens}</div>
+      </div>
     );
   }
 }
-
 
 export default App;
